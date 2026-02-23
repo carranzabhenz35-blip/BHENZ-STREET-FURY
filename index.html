@@ -4,8 +4,16 @@
 <meta charset="UTF-8">
 <title>BHENZ BOMBER MAN</title>
 <style>
-body{margin:0;background:#111;overflow:hidden;font-family:Arial;color:white;}
-canvas{display:block;}
+body{
+margin:0;
+background:#111;
+overflow:hidden;
+}
+canvas{
+display:block;
+margin:auto;
+background:#000;
+}
 </style>
 </head>
 <body>
@@ -13,48 +21,70 @@ canvas{display:block;}
 <canvas id="game"></canvas>
 
 <script>
-let canvas=document.getElementById("game");
-let ctx=canvas.getContext("2d");
 
-canvas.width=window.innerWidth;
-canvas.height=window.innerHeight;
+const canvas=document.getElementById("game");
+const ctx=canvas.getContext("2d");
 
-let tile=40;
-let cols=Math.floor(canvas.width/tile);
-let rows=Math.floor(canvas.height/tile);
+const tile=40;
+const cols=13;
+const rows=15;
 
+canvas.width=cols*tile;
+canvas.height=rows*tile;
+
+let gameOver=false;
+
+// ===== MAP GENERATION =====
 let map=[];
+
 for(let y=0;y<rows;y++){
 map[y]=[];
 for(let x=0;x<cols;x++){
+
+// Border walls
 if(x===0||y===0||x===cols-1||y===rows-1){
-map[y][x]=1; // wall
-}else if(Math.random()<0.2){
-map[y][x]=2; // breakable
-}else{
-map[y][x]=0; // empty
+map[y][x]=1;
 }
+
+// Checker solid walls
+else if(x%2===0 && y%2===0){
+map[y][x]=1;
+}
+
+// Breakable blocks
+else if(Math.random()<0.4 && !(x<=2 && y<=2)){
+map[y][x]=2;
+}
+
+else{
+map[y][x]=0;
+}
+
 }
 }
 
+// ===== PLAYER & ENEMY =====
 let player={x:1,y:1};
 let enemy={x:cols-2,y:rows-2};
+
 let bombs=[];
 let explosions=[];
-let gameOver=false;
 
-// touch move
+// ===== TOUCH CONTROL =====
 canvas.addEventListener("touchstart",e=>{
 if(gameOver) return;
-let touch=e.touches[0];
-let gridX=Math.floor(touch.clientX/tile);
-let gridY=Math.floor(touch.clientY/tile);
 
-if(Math.abs(gridX-player.x)+Math.abs(gridY-player.y)===1){
-if(map[gridY][gridX]===0){
-player.x=gridX;
-player.y=gridY;
-}
+let rect=canvas.getBoundingClientRect();
+let touch=e.touches[0];
+let tx=Math.floor((touch.clientX-rect.left)/tile);
+let ty=Math.floor((touch.clientY-rect.top)/tile);
+
+let dx=Math.abs(tx-player.x);
+let dy=Math.abs(ty-player.y);
+
+if(dx+dy===1 && map[ty][tx]===0){
+player.x=tx;
+player.y=ty;
 }else{
 placeBomb();
 }
@@ -64,25 +94,29 @@ function placeBomb(){
 bombs.push({x:player.x,y:player.y,timer:60});
 }
 
+// ===== GAME LOOP =====
 function update(){
 
 ctx.clearRect(0,0,canvas.width,canvas.height);
 
-// draw map
+// Draw map
 for(let y=0;y<rows;y++){
 for(let x=0;x<cols;x++){
+
 if(map[y][x]===1){
-ctx.fillStyle="gray";
+ctx.fillStyle="#888";
 ctx.fillRect(x*tile,y*tile,tile,tile);
 }
+
 if(map[y][x]===2){
-ctx.fillStyle="brown";
+ctx.fillStyle="orange";
 ctx.fillRect(x*tile,y*tile,tile,tile);
 }
+
 }
 }
 
-// bombs
+// Draw bombs
 bombs.forEach((b,i)=>{
 ctx.fillStyle="black";
 ctx.beginPath();
@@ -96,24 +130,25 @@ bombs.splice(i,1);
 }
 });
 
-// explosions
+// Draw explosions
 explosions.forEach((ex,i)=>{
-ctx.fillStyle="orange";
+ctx.fillStyle="red";
 ctx.fillRect(ex.x*tile,ex.y*tile,tile,tile);
 ex.timer--;
 if(ex.timer<=0) explosions.splice(i,1);
 });
 
-// player
+// Player
 ctx.fillStyle="cyan";
 ctx.fillRect(player.x*tile,player.y*tile,tile,tile);
 
-// enemy move random
-if(Math.random()<0.02){
-let dir=[[1,0],[-1,0],[0,1],[0,-1]][Math.floor(Math.random()*4)];
-let nx=enemy.x+dir[0];
-let ny=enemy.y+dir[1];
-if(map[ny]&&map[ny][nx]===0){
+// Enemy random move
+if(Math.random()<0.03){
+let dirs=[[1,0],[-1,0],[0,1],[0,-1]];
+let d=dirs[Math.floor(Math.random()*4)];
+let nx=enemy.x+d[0];
+let ny=enemy.y+d[1];
+if(map[ny][nx]===0){
 enemy.x=nx;
 enemy.y=ny;
 }
@@ -122,7 +157,7 @@ enemy.y=ny;
 ctx.fillStyle="red";
 ctx.fillRect(enemy.x*tile,enemy.y*tile,tile,tile);
 
-// collision
+// Collision check
 explosions.forEach(ex=>{
 if(ex.x===player.x && ex.y===player.y){
 gameOver=true;
@@ -139,18 +174,27 @@ requestAnimationFrame(update);
 }
 
 function explode(x,y){
+
 let dirs=[[0,0],[1,0],[-1,0],[0,1],[0,-1]];
+
 dirs.forEach(d=>{
 let nx=x+d[0];
 let ny=y+d[1];
-if(map[ny]&&map[ny][nx]!==1){
-if(map[ny][nx]===2) map[ny][nx]=0;
-explosions.push({x:nx,y:ny,timer:30});
+
+if(map[ny][nx]!==1){
+
+if(map[ny][nx]===2){
+map[ny][nx]=0;
+}
+
+explosions.push({x:nx,y:ny,timer:25});
 }
 });
+
 }
 
 update();
+
 </script>
 
 </body>
