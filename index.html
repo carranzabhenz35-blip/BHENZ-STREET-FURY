@@ -7,232 +7,182 @@
 <style>
 body{
   margin:0;
+  background:#222;
+  overflow:hidden;
   font-family:Arial;
-  background:#111;
-  color:white;
-  text-align:center;
 }
 
-h1{
-  color:red;
+#game{
+  width:100vw;
+  height:100vh;
+  background:linear-gradient(#444,#111);
+  position:relative;
 }
 
-#arena{
-  display:flex;
-  justify-content:space-around;
-  align-items:center;
-  margin-top:40px;
+.fighter{
+  width:60px;
+  height:100px;
+  position:absolute;
+  bottom:50px;
+  background:red;
 }
 
-.character{
-  height:150px;
-  transition:0.2s;
+#enemy{
+  background:blue;
 }
 
-.attack-move{
-  transform:translateX(30px);
-}
-
-.enemy-move{
-  transform:translateX(-30px);
-}
-
-.hp-bar{
-  width:160px;
-  height:15px;
+.hp-container{
+  position:absolute;
+  top:20px;
+  width:40%;
+  height:20px;
   background:#333;
   border:2px solid white;
-  margin:5px auto;
 }
 
-.hp-fill{
+#playerHPContainer{ left:20px; }
+#enemyHPContainer{ right:20px; }
+
+.hp{
   height:100%;
   background:lime;
   width:100%;
+}
+
+.controls{
+  position:absolute;
+  bottom:10px;
+  width:100%;
+  text-align:center;
 }
 
 button{
   padding:10px 15px;
   margin:5px;
   font-weight:bold;
-  border:none;
-  border-radius:5px;
-  color:white;
 }
-
-.attack{background:red;}
-.special{background:blue;}
-.heal{background:green;}
-.upgrade{background:gray;}
 </style>
 </head>
 
 <body>
 
-<h1>BHENZ STREET FURY</h1>
+<div id="game">
 
-<div id="menu">
-<input type="text" id="heroInput" placeholder="Enter Hero Name">
-<br><br>
-<button class="attack" onclick="startGame()">START</button>
+<div id="playerHPContainer" class="hp-container">
+<div id="playerHP" class="hp"></div>
 </div>
 
-<div id="game" style="display:none;">
-
-<h3 id="heroTitle"></h3>
-<p>Level: <span id="level">1</span> | Gold: <span id="gold">0</span></p>
-
-<div id="arena">
-
-<div>
-<img id="playerImg" class="character"
-src="https://raw.githubusercontent.com/rodrigopfernandes/sprite-sheet-example/master/player.png">
-<div class="hp-bar">
-<div id="playerHP" class="hp-fill"></div>
-</div>
+<div id="enemyHPContainer" class="hp-container">
+<div id="enemyHP" class="hp"></div>
 </div>
 
-<div style="font-size:40px;">VS</div>
+<div id="player" class="fighter" style="left:100px;"></div>
+<div id="enemy" class="fighter" style="right:100px;"></div>
 
-<div>
-<img id="enemyImg" class="character"
-src="https://raw.githubusercontent.com/rodrigopfernandes/sprite-sheet-example/master/enemy.png">
-<div class="hp-bar">
-<div id="enemyHP" class="hp-fill"></div>
+<div class="controls">
+<button onclick="moveLeft()">Left</button>
+<button onclick="moveRight()">Right</button>
+<button onclick="jump()">Jump</button>
+<button onclick="punch()">Punch</button>
 </div>
-<h3 id="bossName"></h3>
-</div>
-
-</div>
-
-<br>
-
-<button class="attack" onclick="attack()">ATTACK</button>
-<button class="special" onclick="special()">SPECIAL</button>
-<button class="heal" onclick="heal()">HEAL</button>
-<button class="upgrade" onclick="upgrade()">UPGRADE</button>
 
 </div>
 
 <script>
 
-let level=1;
-let gold=0;
-let attackPower=15;
+let player=document.getElementById("player");
+let enemy=document.getElementById("enemy");
 
-let playerMax=100;
+let playerX=100;
+let enemyX=window.innerWidth-160;
+
 let playerHP=100;
-
-let enemyMax=100;
 let enemyHP=100;
 
-let bosses=["Mark","Gelo","Midori","Jeth","Fred","MASTER BHENZ"];
+let isJumping=false;
+let velocityY=0;
+let gravity=0.8;
 
-function startGame(){
-  let name=document.getElementById("heroInput").value;
-  if(name=="") name="Hero";
+function update(){
+  player.style.left=playerX+"px";
+  enemy.style.left=enemyX+"px";
 
-  document.getElementById("menu").style.display="none";
-  document.getElementById("game").style.display="block";
-  document.getElementById("heroTitle").innerText="Hero: "+name;
+  document.getElementById("playerHP").style.width=playerHP+"%";
+  document.getElementById("enemyHP").style.width=enemyHP+"%";
 
-  loadBoss();
+  // gravity
+  if(isJumping){
+    velocityY-=gravity;
+    let bottom=parseInt(player.style.bottom||50);
+    bottom+=velocityY;
+    if(bottom<=50){
+      bottom=50;
+      isJumping=false;
+      velocityY=0;
+    }
+    player.style.bottom=bottom+"px";
+  }
 }
 
-function loadBoss(){
-  document.getElementById("bossName").innerText="Boss: "+bosses[level-1];
-  enemyMax=100+(level*40);
-  enemyHP=enemyMax;
-  updateUI();
+function moveLeft(){
+  playerX-=20;
+  if(playerX<0) playerX=0;
+  update();
 }
 
-function updateUI(){
-  document.getElementById("playerHP").style.width=(playerHP/playerMax*100)+"%";
-  document.getElementById("enemyHP").style.width=(enemyHP/enemyMax*100)+"%";
-  document.getElementById("level").innerText=level;
-  document.getElementById("gold").innerText=gold;
+function moveRight(){
+  playerX+=20;
+  if(playerX>window.innerWidth-100) playerX=window.innerWidth-100;
+  update();
 }
 
-function attack(){
-  let player=document.getElementById("playerImg");
-  player.classList.add("attack-move");
-  setTimeout(()=>player.classList.remove("attack-move"),200);
+function jump(){
+  if(!isJumping){
+    isJumping=true;
+    velocityY=15;
+  }
+}
 
-  let dmg=Math.floor(Math.random()*attackPower)+5;
-  enemyHP-=dmg;
+function punch(){
+  let distance=Math.abs(playerX-enemyX);
+  if(distance<100){
+    enemyHP-=10;
+    if(enemyHP<0) enemyHP=0;
+  }
+  update();
+}
 
-  if(enemyHP<=0){
-    enemyHP=0;
-    win();
+// Enemy AI
+setInterval(()=>{
+  if(enemyHP<=0 || playerHP<=0) return;
+
+  if(enemyX>playerX){
+    enemyX-=10;
+  }else{
+    enemyX+=10;
   }
 
-  updateUI();
-}
-
-function special(){
-  let dmg=attackPower*2;
-  enemyHP-=dmg;
-
-  if(enemyHP<=0){
-    enemyHP=0;
-    win();
+  let distance=Math.abs(playerX-enemyX);
+  if(distance<100){
+    playerHP-=5;
+    if(playerHP<0) playerHP=0;
   }
 
-  updateUI();
-}
-
-function enemyAttack(){
-
-  let enemy=document.getElementById("enemyImg");
-  enemy.classList.add("enemy-move");
-  setTimeout(()=>enemy.classList.remove("enemy-move"),200);
-
-  let dmg=Math.floor(Math.random()*20)+5;
-  playerHP-=dmg;
+  update();
 
   if(playerHP<=0){
     alert("YOU LOST!");
     location.reload();
   }
 
-  updateUI();
-}
-
-function win(){
-  alert("Boss Defeated!");
-  gold+=30*level;
-  level++;
-
-  if(level>6){
-    alert("YOU BEAT MASTER BHENZ!");
+  if(enemyHP<=0){
+    alert("YOU WIN!");
     location.reload();
-  }else{
-    loadBoss();
   }
-}
 
-function heal(){
-  if(gold>=20){
-    gold-=20;
-    playerHP+=30;
-    if(playerHP>playerMax) playerHP=playerMax;
-  }
-  updateUI();
-}
+},1000);
 
-function upgrade(){
-  if(gold>=50){
-    gold-=50;
-    attackPower+=5;
-  }
-  updateUI();
-}
-
-setInterval(()=>{
-  if(enemyHP>0){
-    enemyAttack();
-  }
-},3000);
+update();
 
 </script>
 
