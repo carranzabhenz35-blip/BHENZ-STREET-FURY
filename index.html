@@ -8,7 +8,7 @@
 body{
   margin:0;
   font-family:Arial;
-  background:black;
+  background:#111;
   color:white;
   text-align:center;
 }
@@ -21,24 +21,24 @@ h1{
   display:flex;
   justify-content:space-around;
   align-items:center;
-  margin-top:30px;
+  margin-top:40px;
 }
 
 .character{
-  width:120px;
+  height:150px;
   transition:0.2s;
 }
 
 .attack-move{
-  transform:translateX(20px);
+  transform:translateX(30px);
 }
 
 .enemy-move{
-  transform:translateX(-20px);
+  transform:translateX(-30px);
 }
 
 .hp-bar{
-  width:150px;
+  width:160px;
   height:15px;
   background:#333;
   border:2px solid white;
@@ -85,8 +85,8 @@ button{
 <div id="arena">
 
 <div>
-<img id="playerImg" class="character" 
-src="https://i.imgur.com/8QfR5wG.png">
+<img id="playerImg" class="character"
+src="https://raw.githubusercontent.com/rodrigopfernandes/sprite-sheet-example/master/player.png">
 <div class="hp-bar">
 <div id="playerHP" class="hp-fill"></div>
 </div>
@@ -95,8 +95,8 @@ src="https://i.imgur.com/8QfR5wG.png">
 <div style="font-size:40px;">VS</div>
 
 <div>
-<img id="enemyImg" class="character" 
-src="https://i.imgur.com/6XgP6Dk.png">
+<img id="enemyImg" class="character"
+src="https://raw.githubusercontent.com/rodrigopfernandes/sprite-sheet-example/master/enemy.png">
 <div class="hp-bar">
 <div id="enemyHP" class="hp-fill"></div>
 </div>
@@ -154,7 +154,6 @@ function updateUI(){
 }
 
 function attack(){
-
   let player=document.getElementById("playerImg");
   player.classList.add("attack-move");
   setTimeout(()=>player.classList.remove("attack-move"),200);
