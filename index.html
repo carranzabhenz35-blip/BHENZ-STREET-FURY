@@ -8,15 +8,32 @@ body{
 margin:0;
 background:black;
 overflow:hidden;
+font-family:Arial;
+color:white;
 }
-canvas{
-display:block;
+canvas{display:block;}
+#controls{
+position:fixed;
+bottom:20px;
+width:100%;
+text-align:center;
+}
+button{
+padding:15px 25px;
+margin:10px;
+font-size:18px;
+font-weight:bold;
 }
 </style>
 </head>
 <body>
 
 <canvas id="game"></canvas>
+
+<div id="controls">
+<button ontouchstart="moveUp=true" ontouchend="moveUp=false">UP</button>
+<button ontouchstart="moveDown=true" ontouchend="moveDown=false">DOWN</button>
+</div>
 
 <script>
 let canvas=document.getElementById("game");
@@ -26,10 +43,8 @@ canvas.width=window.innerWidth;
 canvas.height=window.innerHeight;
 
 let player={
-x:50,
+x:80,
 y:canvas.height/2,
-w:40,
-h:40,
 hp:100
 };
 
@@ -37,41 +52,76 @@ let bullets=[];
 let enemies=[];
 let score=0;
 
-function spawnEnemy(){
+let moveUp=false;
+let moveDown=false;
+
+// AUTO FIRE
+setInterval(()=>{
+bullets.push({
+x:player.x+30,
+y:player.y,
+w:15,
+h:4
+});
+},300);
+
+// SPAWN ENEMY
+setInterval(()=>{
 enemies.push({
 x:canvas.width,
 y:Math.random()*(canvas.height-40),
-w:40,
-h:40
+size:40
 });
-}
+},1500);
 
-function shoot(){
-bullets.push({
-x:player.x+40,
-y:player.y+18,
-w:10,
-h:4
-});
-}
+function drawShip(x,y){
+ctx.fillStyle="cyan";
 
-document.addEventListener("touchstart",shoot);
+// body
+ctx.beginPath();
+ctx.moveTo(x,y);
+ctx.lineTo(x-25,y-15);
+ctx.lineTo(x-25,y+15);
+ctx.closePath();
+ctx.fill();
+
+// cockpit
+ctx.fillStyle="white";
+ctx.beginPath();
+ctx.arc(x-10,y,5,0,Math.PI*2);
+ctx.fill();
+
+// engine flame
+ctx.fillStyle="orange";
+ctx.beginPath();
+ctx.moveTo(x-25,y-8);
+ctx.lineTo(x-40,y);
+ctx.lineTo(x-25,y+8);
+ctx.closePath();
+ctx.fill();
+}
 
 function update(){
 
-// clear screen
 ctx.fillStyle="black";
 ctx.fillRect(0,0,canvas.width,canvas.height);
 
-// player
-ctx.fillStyle="cyan";
-ctx.fillRect(player.x,player.y,player.w,player.h);
+// MOVE
+if(moveUp) player.y-=5;
+if(moveDown) player.y+=5;
 
-// bullets
+if(player.y<20) player.y=20;
+if(player.y>canvas.height-20) player.y=canvas.height-20;
+
+// DRAW PLAYER
+drawShip(player.x,player.y);
+
+// BULLETS
 for(let i=0;i<bullets.length;i++){
-bullets[i].x+=8;
+bullets[i].x+=10;
+
 ctx.fillStyle="yellow";
-ctx.fillRect(bullets[i].x,bullets[i].y,bullets[i].w,bullets[i].h);
+ctx.fillRect(bullets[i].x,bullets[i].y-2,15,4);
 
 if(bullets[i].x>canvas.width){
 bullets.splice(i,1);
@@ -79,11 +129,12 @@ i--;
 }
 }
 
-// enemies
+// ENEMIES
 for(let i=0;i<enemies.length;i++){
 enemies[i].x-=4;
+
 ctx.fillStyle="red";
-ctx.fillRect(enemies[i].x,enemies[i].y,enemies[i].w,enemies[i].h);
+ctx.fillRect(enemies[i].x,enemies[i].y,40,40);
 
 if(enemies[i].x<0){
 player.hp-=10;
@@ -96,14 +147,15 @@ location.reload();
 }
 }
 
-// collision
+// COLLISION
 for(let i=0;i<bullets.length;i++){
 for(let j=0;j<enemies.length;j++){
 if(
+bullets[i] && enemies[j] &&
 bullets[i].x < enemies[j].x + 40 &&
-bullets[i].x + 10 > enemies[j].x &&
+bullets[i].x + 15 > enemies[j].x &&
 bullets[i].y < enemies[j].y + 40 &&
-bullets[i].y + 4 > enemies[j].y
+bullets[i].y > enemies[j].y
 ){
 bullets.splice(i,1);
 enemies.splice(j,1);
@@ -121,8 +173,6 @@ ctx.fillText("Score: "+score,20,50);
 
 requestAnimationFrame(update);
 }
-
-setInterval(spawnEnemy,1500);
 
 update();
 </script>
