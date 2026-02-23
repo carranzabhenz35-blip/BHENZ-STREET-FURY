@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>BHENZ STREET FURY</title>
+
+<style>
+body{
+  background:black;
+  color:red;
+  text-align:center;
+  font-family:Arial;
+}
+
+#game{
+  margin-top:20px;
+}
+
+button{
+  padding:10px 20px;
+  margin:5px;
+  font-size:16px;
+}
+
+.bar{
+  height:20px;
+  background:green;
+  margin:5px auto;
+}
+
+#playerBar{
+  width:200px;
+}
+
+#enemyBar{
+  width:200px;
+}
+</style>
+</head>
+
+<body>
+
+<h1>BHENZ STREET FURY</h1>
+
+<div id="menu">
+  <input type="text" id="heroNameInput" placeholder="Enter Hero Name">
+  <button onclick="startGame()">Start Game</button>
+</div>
+
+<div id="game" style="display:none;">
+
+<h2 id="heroName"></h2>
+<p>Level: <span id="level">1</span> | XP: <span id="xp">0</span>/100 | Gold: <span id="gold">0</span></p>
+
+<h3>Boss: <span id="bossName"></span></h3>
+
+<p>Player HP</p>
+<div id="playerBar" class="bar"></div>
+
+<p>Boss HP</p>
+<div id="enemyBar" class="bar"></div>
+
+<br>
+
+<button onclick="attack()">Attack</button>
+<button onclick="special()">Special</button>
+<button onclick="heal()">Heal (20 Gold)</button>
+
+<br><br>
+<button onclick="nextLevel()">Next Level</button>
+<button onclick="upgradeAttack()">Upgrade Attack (50 Gold)</button>
+
+</div>
+
+<script>
+
+let heroName = "";
+let level = 1;
+let xp = 0;
+let xpNeed = 100;
+let gold = 0;
+let attackPower = 15;
+
+let playerHP = 100;
+let playerMaxHP = 100;
+
+let enemyHP = 100;
+let enemyMaxHP = 100;
+
+let bosses = [
+  "Mark",
+  "Gelo",
+  "Midori",
+  "Jeth",
+  "Fred",
+  "MASTER BHENZ"
+];
+
+function startGame(){
+  heroName = document.getElementById("heroNameInput").value;
+  if(heroName == "") heroName = "Hero";
+
+  document.getElementById("menu").style.display="none";
+  document.getElementById("game").style.display="block";
+  document.getElementById("heroName").innerText = heroName;
+
+  loadBoss();
+}
+
+function loadBoss(){
+  document.getElementById("bossName").innerText = bosses[level-1];
+
+  enemyMaxHP = 100 + (level*50);
+  enemyHP = enemyMaxHP;
+
+  updateBars();
+}
+
+function updateBars(){
+  document.getElementById("playerBar").style.width = (playerHP/playerMaxHP*200)+"px";
+  document.getElementById("enemyBar").style.width = (enemyHP/enemyMaxHP*200)+"px";
+
+  document.getElementById("level").innerText = level;
+  document.getElementById("xp").innerText = xp;
+  document.getElementById("gold").innerText = gold;
+}
+
+function attack(){
+  let damage = Math.floor(Math.random()*attackPower)+5;
+  enemyHP -= damage;
+
+  if(enemyHP <= 0){
+    enemyHP = 0;
+    winBattle();
+  }else{
+    enemyAttack();
+  }
+
+  updateBars();
+}
+
+function special(){
+  if(level == 6){
+    alert("MASTER BHENZ EARTH SMASH!");
+  }
+
+  let damage = attackPower * 2;
+  enemyHP -= damage;
+
+  if(enemyHP <= 0){
+    enemyHP = 0;
+    winBattle();
+  }else{
+    enemyAttack();
+  }
+
+  updateBars();
+}
+
+function enemyAttack(){
+  let damage = Math.floor(Math.random()*20)+5;
+  playerHP -= damage;
+
+  if(playerHP <= 0){
+    playerHP = 0;
+    alert("You Lost!");
+    location.reload();
+  }
+}
+
+function winBattle(){
+  alert("Boss Defeated!");
+
+  let rewardXP = 50 * level;
+  let rewardGold = 30 * level;
+
+  xp += rewardXP;
+  gold += rewardGold;
+
+  if(xp >= xpNeed){
+    levelUp();
+  }
+}
+
+function levelUp(){
+  xp = 0;
+  level++;
+  playerMaxHP += 20;
+  playerHP = playerMaxHP;
+  attackPower += 5;
+
+  alert("LEVEL UP!");
+
+  if(level > 6){
+    alert("YOU BEAT MASTER BHENZ! GAME COMPLETE!");
+    location.reload();
+  }else{
+    loadBoss();
+  }
+}
+
+function nextLevel(){
+  if(enemyHP == 0){
+    loadBoss();
+  }else{
+    alert("Defeat boss first!");
+  }
+}
+
+function upgradeAttack(){
+  if(gold >= 50){
+    gold -= 50;
+    attackPower += 5;
+    alert("Attack Upgraded!");
+  }else{
+    alert("Not enough gold!");
+  }
+  updateBars();
+}
+
+function heal(){
+  if(gold >= 20){
+    gold -= 20;
+    playerHP += 30;
+    if(playerHP > playerMaxHP) playerHP = playerMaxHP;
+  }else{
+    alert("Not enough gold!");
+  }
+  updateBars();
+}
+
+</script>
+
+</body>
+</html>
