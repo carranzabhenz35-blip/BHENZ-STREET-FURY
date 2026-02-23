@@ -2,64 +2,72 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>BHENZ STREET FURY</title>
-
+<title>BHENZ SPACE IMPACT</title>
 <style>
 body{
-  margin:0;
-  background:#222;
-  overflow:hidden;
-  font-family:Arial;
+margin:0;
+overflow:hidden;
+background:black;
+font-family:Arial;
+color:white;
 }
 
 #game{
-  width:100vw;
-  height:100vh;
-  background:linear-gradient(#444,#111);
-  position:relative;
+position:relative;
+width:100vw;
+height:100vh;
+overflow:hidden;
 }
 
-.fighter{
-  width:60px;
-  height:100px;
-  position:absolute;
-  bottom:50px;
-  background:red;
+.player{
+position:absolute;
+width:40px;
+height:40px;
+background:cyan;
+border-radius:5px;
+left:50px;
 }
 
-#enemy{
-  background:blue;
+.enemy{
+position:absolute;
+width:40px;
+height:40px;
+background:red;
+border-radius:5px;
 }
 
-.hp-container{
-  position:absolute;
-  top:20px;
-  width:40%;
-  height:20px;
-  background:#333;
-  border:2px solid white;
+.bullet{
+position:absolute;
+width:10px;
+height:4px;
+background:yellow;
 }
 
-#playerHPContainer{ left:20px; }
-#enemyHPContainer{ right:20px; }
+.star{
+position:absolute;
+width:2px;
+height:2px;
+background:white;
+}
 
-.hp{
-  height:100%;
-  background:lime;
-  width:100%;
+.ui{
+position:absolute;
+top:10px;
+left:10px;
+font-size:14px;
 }
 
 .controls{
-  position:absolute;
-  bottom:10px;
-  width:100%;
-  text-align:center;
+position:absolute;
+bottom:20px;
+width:100%;
+text-align:center;
 }
 
 button{
-  padding:10px 15px;
-  margin:5px;
-  font-weight:bold;
+padding:10px 15px;
+margin:5px;
+font-weight:bold;
 }
 </style>
 </head>
@@ -67,120 +75,132 @@ button{
 <body>
 
 <div id="game">
-
-<div id="playerHPContainer" class="hp-container">
-<div id="playerHP" class="hp"></div>
+<div class="ui">
+Score: <span id="score">0</span> |
+HP: <span id="hp">100</span>
 </div>
 
-<div id="enemyHPContainer" class="hp-container">
-<div id="enemyHP" class="hp"></div>
-</div>
-
-<div id="player" class="fighter" style="left:100px;"></div>
-<div id="enemy" class="fighter" style="right:100px;"></div>
+<div id="player" class="player"></div>
 
 <div class="controls">
-<button onclick="moveLeft()">Left</button>
-<button onclick="moveRight()">Right</button>
-<button onclick="jump()">Jump</button>
-<button onclick="punch()">Punch</button>
+<button onclick="moveUp()">UP</button>
+<button onclick="moveDown()">DOWN</button>
+<button onclick="shoot()">SHOOT</button>
 </div>
-
 </div>
 
 <script>
 
+let game=document.getElementById("game");
 let player=document.getElementById("player");
-let enemy=document.getElementById("enemy");
 
-let playerX=100;
-let enemyX=window.innerWidth-160;
+let playerY=window.innerHeight/2;
+let score=0;
+let hp=100;
 
-let playerHP=100;
-let enemyHP=100;
+let bullets=[];
+let enemies=[];
 
-let isJumping=false;
-let velocityY=0;
-let gravity=0.8;
+player.style.top=playerY+"px";
+
+function moveUp(){
+playerY-=30;
+if(playerY<0) playerY=0;
+player.style.top=playerY+"px";
+}
+
+function moveDown(){
+playerY+=30;
+if(playerY>window.innerHeight-40) playerY=window.innerHeight-40;
+player.style.top=playerY+"px";
+}
+
+function shoot(){
+let bullet=document.createElement("div");
+bullet.className="bullet";
+bullet.style.left="90px";
+bullet.style.top=(playerY+18)+"px";
+game.appendChild(bullet);
+bullets.push(bullet);
+}
+
+function spawnEnemy(){
+let enemy=document.createElement("div");
+enemy.className="enemy";
+enemy.style.left=window.innerWidth+"px";
+enemy.style.top=Math.random()*(window.innerHeight-40)+"px";
+game.appendChild(enemy);
+enemies.push(enemy);
+}
+
+function spawnStars(){
+for(let i=0;i<30;i++){
+let star=document.createElement("div");
+star.className="star";
+star.style.left=Math.random()*window.innerWidth+"px";
+star.style.top=Math.random()*window.innerHeight+"px";
+game.appendChild(star);
+}
+}
+
+spawnStars();
 
 function update(){
-  player.style.left=playerX+"px";
-  enemy.style.left=enemyX+"px";
 
-  document.getElementById("playerHP").style.width=playerHP+"%";
-  document.getElementById("enemyHP").style.width=enemyHP+"%";
+// bullets
+for(let i=0;i<bullets.length;i++){
+let b=bullets[i];
+b.style.left=(b.offsetLeft+10)+"px";
 
-  // gravity
-  if(isJumping){
-    velocityY-=gravity;
-    let bottom=parseInt(player.style.bottom||50);
-    bottom+=velocityY;
-    if(bottom<=50){
-      bottom=50;
-      isJumping=false;
-      velocityY=0;
-    }
-    player.style.bottom=bottom+"px";
-  }
+if(b.offsetLeft>window.innerWidth){
+b.remove();
+bullets.splice(i,1);
+i--;
+}
 }
 
-function moveLeft(){
-  playerX-=20;
-  if(playerX<0) playerX=0;
-  update();
+// enemies
+for(let i=0;i<enemies.length;i++){
+let e=enemies[i];
+e.style.left=(e.offsetLeft-4)+"px";
+
+if(e.offsetLeft<0){
+hp-=10;
+document.getElementById("hp").innerText=hp;
+e.remove();
+enemies.splice(i,1);
+i--;
+if(hp<=0){
+alert("GAME OVER");
+location.reload();
+}
+}
 }
 
-function moveRight(){
-  playerX+=20;
-  if(playerX>window.innerWidth-100) playerX=window.innerWidth-100;
-  update();
+// collision
+for(let i=0;i<bullets.length;i++){
+for(let j=0;j<enemies.length;j++){
+if(
+bullets[i].offsetLeft < enemies[j].offsetLeft + 40 &&
+bullets[i].offsetLeft + 10 > enemies[j].offsetLeft &&
+bullets[i].offsetTop < enemies[j].offsetTop + 40 &&
+bullets[i].offsetTop + 4 > enemies[j].offsetTop
+){
+bullets[i].remove();
+enemies[j].remove();
+bullets.splice(i,1);
+enemies.splice(j,1);
+score+=10;
+document.getElementById("score").innerText=score;
+break;
+}
+}
 }
 
-function jump(){
-  if(!isJumping){
-    isJumping=true;
-    velocityY=15;
-  }
+requestAnimationFrame(update);
 }
 
-function punch(){
-  let distance=Math.abs(playerX-enemyX);
-  if(distance<100){
-    enemyHP-=10;
-    if(enemyHP<0) enemyHP=0;
-  }
-  update();
-}
-
-// Enemy AI
-setInterval(()=>{
-  if(enemyHP<=0 || playerHP<=0) return;
-
-  if(enemyX>playerX){
-    enemyX-=10;
-  }else{
-    enemyX+=10;
-  }
-
-  let distance=Math.abs(playerX-enemyX);
-  if(distance<100){
-    playerHP-=5;
-    if(playerHP<0) playerHP=0;
-  }
-
-  update();
-
-  if(playerHP<=0){
-    alert("YOU LOST!");
-    location.reload();
-  }
-
-  if(enemyHP<=0){
-    alert("YOU WIN!");
-    location.reload();
-  }
-
-},1000);
+setInterval(spawnEnemy,1500);
 
 update();
 
