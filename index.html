@@ -6,70 +6,118 @@
 
 <style>
 body{
-  background:black;
-  color:red;
-  text-align:center;
+  margin:0;
   font-family:Arial;
+  background:url("https://images.unsplash.com/photo-1542751371-adc38448a05e") no-repeat center center fixed;
+  background-size:cover;
+  color:white;
+  text-align:center;
+}
+
+.overlay{
+  background:rgba(0,0,0,0.8);
+  min-height:100vh;
+  padding:20px;
+}
+
+h1{
+  color:#ff2a2a;
+  margin-top:10px;
 }
 
 #arena{
   display:flex;
   justify-content:space-around;
   align-items:center;
-  margin:30px;
-  font-size:70px;
+  margin-top:30px;
 }
 
-.bar{
-  height:20px;
-  background:green;
-  margin:5px auto;
+.character{
+  font-size:80px;
+}
+
+.vs{
+  font-size:60px;
+  color:orange;
+  font-weight:bold;
+}
+
+.hp-bar{
   width:200px;
+  height:20px;
+  background:#333;
+  border:2px solid white;
+  margin:5px auto;
+}
+
+.hp-fill{
+  height:100%;
+  background:lime;
+  width:100%;
 }
 
 button{
-  padding:10px 15px;
-  margin:5px;
+  padding:12px 18px;
+  margin:6px;
   font-size:14px;
+  font-weight:bold;
+  border:none;
+  border-radius:6px;
+  color:white;
 }
+
+.attack{background:#c40000;}
+.special{background:#0055ff;}
+.heal{background:#009933;}
+.upgrade{background:#444;}
 </style>
 </head>
 
 <body>
+
+<div class="overlay">
 
 <h1>BHENZ STREET FURY</h1>
 
 <div id="menu">
   <input type="text" id="heroInput" placeholder="Enter Hero Name">
   <br><br>
-  <button onclick="startGame()">Start Game</button>
+  <button class="attack" onclick="startGame()">Start Game</button>
 </div>
 
 <div id="game" style="display:none;">
 
-<h2 id="heroTitle"></h2>
+<h3 id="heroTitle"></h3>
 <p>Level: <span id="level">1</span> | XP: <span id="xp">0</span>/100 | Gold: <span id="gold">0</span></p>
 
 <div id="arena">
   <div>
-    <div>🥊</div>
-    <p>Player HP</p>
-    <div id="playerBar" class="bar"></div>
+    <div class="character">🥊</div>
+    <div class="hp-bar">
+      <div id="playerHP" class="hp-fill"></div>
+    </div>
   </div>
 
+  <div class="vs">VS</div>
+
   <div>
+    <div id="bossEmoji" class="character"></div>
+    <div class="hp-bar">
+      <div id="enemyHP" class="hp-fill"></div>
+    </div>
     <h3 id="bossName"></h3>
-    <div id="bossEmoji"></div>
-    <p>Boss HP</p>
-    <div id="enemyBar" class="bar"></div>
   </div>
 </div>
 
-<button onclick="attack()">Attack</button>
-<button onclick="special()">Special</button>
-<button onclick="heal()">Heal (20 Gold)</button>
 <br>
-<button onclick="upgradeAttack()">Upgrade Attack (50 Gold)</button>
+
+<button class="attack" onclick="attack()">ATTACK</button>
+<button class="special" onclick="special()">SPECIAL</button>
+<button class="heal" onclick="heal()">HEAL (20G)</button>
+<br>
+<button class="upgrade" onclick="upgradeAttack()">UPGRADE (50G)</button>
+
+</div>
 
 </div>
 
@@ -103,7 +151,7 @@ function startGame(){
 
   document.getElementById("menu").style.display="none";
   document.getElementById("game").style.display="block";
-  document.getElementById("heroTitle").innerText=heroName;
+  document.getElementById("heroTitle").innerText="Hero: "+heroName;
 
   loadBoss();
 }
@@ -113,15 +161,15 @@ function loadBoss(){
   document.getElementById("bossName").innerText="Boss: "+boss.name;
   document.getElementById("bossEmoji").innerText=boss.emoji;
 
-  enemyMaxHP=100+(level*50);
+  enemyMaxHP=120+(level*50);
   enemyHP=enemyMaxHP;
 
   updateUI();
 }
 
 function updateUI(){
-  document.getElementById("playerBar").style.width=(playerHP/playerMaxHP*200)+"px";
-  document.getElementById("enemyBar").style.width=(enemyHP/enemyMaxHP*200)+"px";
+  document.getElementById("playerHP").style.width=(playerHP/playerMaxHP*100)+"%";
+  document.getElementById("enemyHP").style.width=(enemyHP/enemyMaxHP*100)+"%";
 
   document.getElementById("level").innerText=level;
   document.getElementById("xp").innerText=xp;
@@ -129,11 +177,7 @@ function updateUI(){
 }
 
 function attack(){
-
-  if(Math.random()<0.15){
-    alert("Boss Dodged!");
-    return;
-  }
+  if(Math.random()<0.15){ alert("Boss Dodged!"); return; }
 
   let damage=Math.floor(Math.random()*attackPower)+5;
 
@@ -143,70 +187,48 @@ function attack(){
   }
 
   enemyHP-=damage;
-
-  if(enemyHP<=0){
-    enemyHP=0;
-    winBattle();
-  }
-
+  if(enemyHP<=0){ enemyHP=0; winBattle(); }
   updateUI();
 }
 
 function special(){
-
   let damage=attackPower*2;
-
-  if(level==6){
-    alert("MASTER BHENZ EARTH SMASH!");
-  }
-
   enemyHP-=damage;
 
-  if(enemyHP<=0){
-    enemyHP=0;
-    winBattle();
-  }
+  if(level==6){ alert("MASTER BHENZ EARTH SMASH!"); }
 
+  if(enemyHP<=0){ enemyHP=0; winBattle(); }
   updateUI();
 }
 
 function enemyAttack(){
-
   if(enemyHP<=0) return;
 
-  if(Math.random()<0.15){
-    alert("You Dodged!");
-    return;
-  }
+  if(Math.random()<0.15){ alert("You Dodged!"); return; }
 
   let damage=Math.floor(Math.random()*(10+level*5))+5;
 
   if(Math.random()<0.2){
     damage*=2;
-    alert("Boss CRITICAL HIT!");
+    alert("Boss CRITICAL!");
   }
 
   playerHP-=damage;
-
   if(playerHP<0) playerHP=0;
-
   updateUI();
 
   if(playerHP<=0){
-    alert("You Lost!");
+    alert("YOU LOST!");
     location.reload();
   }
 }
 
 function winBattle(){
   alert("Boss Defeated!");
-
   xp+=50*level;
   gold+=30*level;
 
-  if(xp>=xpNeed){
-    levelUp();
-  }
+  if(xp>=xpNeed){ levelUp(); }
 }
 
 function levelUp(){
