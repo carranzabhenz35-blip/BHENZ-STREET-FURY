@@ -6,154 +6,74 @@
 <style>
 body{
 margin:0;
-overflow:hidden;
 background:black;
-font-family:Arial;
-color:white;
-}
-
-#game{
-position:relative;
-width:100vw;
-height:100vh;
 overflow:hidden;
 }
-
-.player{
-position:absolute;
-width:40px;
-height:40px;
-background:cyan;
-border-radius:5px;
-left:50px;
-}
-
-.enemy{
-position:absolute;
-width:40px;
-height:40px;
-background:red;
-border-radius:5px;
-}
-
-.bullet{
-position:absolute;
-width:10px;
-height:4px;
-background:yellow;
-}
-
-.star{
-position:absolute;
-width:2px;
-height:2px;
-background:white;
-}
-
-.ui{
-position:absolute;
-top:10px;
-left:10px;
-font-size:14px;
-}
-
-.controls{
-position:absolute;
-bottom:20px;
-width:100%;
-text-align:center;
-}
-
-button{
-padding:10px 15px;
-margin:5px;
-font-weight:bold;
+canvas{
+display:block;
 }
 </style>
 </head>
-
 <body>
 
-<div id="game">
-<div class="ui">
-Score: <span id="score">0</span> |
-HP: <span id="hp">100</span>
-</div>
-
-<div id="player" class="player"></div>
-
-<div class="controls">
-<button onclick="moveUp()">UP</button>
-<button onclick="moveDown()">DOWN</button>
-<button onclick="shoot()">SHOOT</button>
-</div>
-</div>
+<canvas id="game"></canvas>
 
 <script>
+let canvas=document.getElementById("game");
+let ctx=canvas.getContext("2d");
 
-let game=document.getElementById("game");
-let player=document.getElementById("player");
+canvas.width=window.innerWidth;
+canvas.height=window.innerHeight;
 
-let playerY=window.innerHeight/2;
-let score=0;
-let hp=100;
+let player={
+x:50,
+y:canvas.height/2,
+w:40,
+h:40,
+hp:100
+};
 
 let bullets=[];
 let enemies=[];
+let score=0;
 
-player.style.top=playerY+"px";
-
-function moveUp(){
-playerY-=30;
-if(playerY<0) playerY=0;
-player.style.top=playerY+"px";
-}
-
-function moveDown(){
-playerY+=30;
-if(playerY>window.innerHeight-40) playerY=window.innerHeight-40;
-player.style.top=playerY+"px";
+function spawnEnemy(){
+enemies.push({
+x:canvas.width,
+y:Math.random()*(canvas.height-40),
+w:40,
+h:40
+});
 }
 
 function shoot(){
-let bullet=document.createElement("div");
-bullet.className="bullet";
-bullet.style.left="90px";
-bullet.style.top=(playerY+18)+"px";
-game.appendChild(bullet);
-bullets.push(bullet);
+bullets.push({
+x:player.x+40,
+y:player.y+18,
+w:10,
+h:4
+});
 }
 
-function spawnEnemy(){
-let enemy=document.createElement("div");
-enemy.className="enemy";
-enemy.style.left=window.innerWidth+"px";
-enemy.style.top=Math.random()*(window.innerHeight-40)+"px";
-game.appendChild(enemy);
-enemies.push(enemy);
-}
-
-function spawnStars(){
-for(let i=0;i<30;i++){
-let star=document.createElement("div");
-star.className="star";
-star.style.left=Math.random()*window.innerWidth+"px";
-star.style.top=Math.random()*window.innerHeight+"px";
-game.appendChild(star);
-}
-}
-
-spawnStars();
+document.addEventListener("touchstart",shoot);
 
 function update(){
 
+// clear screen
+ctx.fillStyle="black";
+ctx.fillRect(0,0,canvas.width,canvas.height);
+
+// player
+ctx.fillStyle="cyan";
+ctx.fillRect(player.x,player.y,player.w,player.h);
+
 // bullets
 for(let i=0;i<bullets.length;i++){
-let b=bullets[i];
-b.style.left=(b.offsetLeft+10)+"px";
+bullets[i].x+=8;
+ctx.fillStyle="yellow";
+ctx.fillRect(bullets[i].x,bullets[i].y,bullets[i].w,bullets[i].h);
 
-if(b.offsetLeft>window.innerWidth){
-b.remove();
+if(bullets[i].x>canvas.width){
 bullets.splice(i,1);
 i--;
 }
@@ -161,16 +81,15 @@ i--;
 
 // enemies
 for(let i=0;i<enemies.length;i++){
-let e=enemies[i];
-e.style.left=(e.offsetLeft-4)+"px";
+enemies[i].x-=4;
+ctx.fillStyle="red";
+ctx.fillRect(enemies[i].x,enemies[i].y,enemies[i].w,enemies[i].h);
 
-if(e.offsetLeft<0){
-hp-=10;
-document.getElementById("hp").innerText=hp;
-e.remove();
+if(enemies[i].x<0){
+player.hp-=10;
 enemies.splice(i,1);
 i--;
-if(hp<=0){
+if(player.hp<=0){
 alert("GAME OVER");
 location.reload();
 }
@@ -181,21 +100,24 @@ location.reload();
 for(let i=0;i<bullets.length;i++){
 for(let j=0;j<enemies.length;j++){
 if(
-bullets[i].offsetLeft < enemies[j].offsetLeft + 40 &&
-bullets[i].offsetLeft + 10 > enemies[j].offsetLeft &&
-bullets[i].offsetTop < enemies[j].offsetTop + 40 &&
-bullets[i].offsetTop + 4 > enemies[j].offsetTop
+bullets[i].x < enemies[j].x + 40 &&
+bullets[i].x + 10 > enemies[j].x &&
+bullets[i].y < enemies[j].y + 40 &&
+bullets[i].y + 4 > enemies[j].y
 ){
-bullets[i].remove();
-enemies[j].remove();
 bullets.splice(i,1);
 enemies.splice(j,1);
 score+=10;
-document.getElementById("score").innerText=score;
 break;
 }
 }
 }
+
+// UI
+ctx.fillStyle="white";
+ctx.font="16px Arial";
+ctx.fillText("HP: "+player.hp,20,30);
+ctx.fillText("Score: "+score,20,50);
 
 requestAnimationFrame(update);
 }
@@ -203,7 +125,6 @@ requestAnimationFrame(update);
 setInterval(spawnEnemy,1500);
 
 update();
-
 </script>
 
 </body>
