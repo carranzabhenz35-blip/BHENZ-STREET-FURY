@@ -2,27 +2,16 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>BHENZ SPACE IMPACT</title>
+<title>BHENZ SPACE IMPACT PRO</title>
 <style>
-body{
-margin:0;
-background:black;
-overflow:hidden;
-font-family:Arial;
-color:white;
-}
-
-canvas{
-display:block;
-}
-
+body{margin:0;background:black;overflow:hidden;font-family:Arial;color:white;}
+canvas{display:block;}
 #controls{
 position:fixed;
 bottom:25px;
 width:100%;
 text-align:center;
 }
-
 .arrowBtn{
 width:70px;
 height:70px;
@@ -30,7 +19,7 @@ font-size:35px;
 border-radius:50%;
 border:none;
 margin:10px;
-background:#222;
+background:#111;
 color:white;
 box-shadow:0 0 15px cyan;
 }
@@ -57,26 +46,58 @@ let ctx=canvas.getContext("2d");
 canvas.width=window.innerWidth;
 canvas.height=window.innerHeight;
 
-let player={ x:80, y:canvas.height/2, hp:100 };
+let player={x:80,y:canvas.height/2,hp:100};
 let bullets=[];
 let enemies=[];
+let explosions=[];
+let stars=[];
 let score=0;
 let moveUp=false;
 let moveDown=false;
+let tripleShot=false;
+let shield=false;
+let boss=null;
+
+// ⭐ STAR BACKGROUND
+for(let i=0;i<100;i++){
+stars.push({
+x:Math.random()*canvas.width,
+y:Math.random()*canvas.height,
+size:Math.random()*2
+});
+}
 
 // AUTO FIRE
 setInterval(()=>{
-bullets.push({ x:player.x+30, y:player.y, w:15, h:4 });
+if(tripleShot){
+bullets.push({x:player.x+30,y:player.y});
+bullets.push({x:player.x+30,y:player.y-10});
+bullets.push({x:player.x+30,y:player.y+10});
+}else{
+bullets.push({x:player.x+30,y:player.y});
+}
 },300);
 
-// SPAWN ENEMY
+// ENEMY SPAWN
 setInterval(()=>{
+if(!boss){
 enemies.push({
 x:canvas.width,
 y:Math.random()*(canvas.height-40),
-size:40
+size:40,
+speed:4 + score/200
 });
-},1500);
+}
+},1200);
+
+// BOSS SPAWN
+function spawnBoss(){
+boss={
+x:canvas.width,
+y:canvas.height/2,
+hp:200
+};
+}
 
 function drawShip(x,y){
 ctx.fillStyle="cyan";
@@ -106,59 +127,94 @@ function update(){
 ctx.fillStyle="black";
 ctx.fillRect(0,0,canvas.width,canvas.height);
 
+// ⭐ Move stars
+ctx.fillStyle="white";
+stars.forEach(s=>{
+s.x-=1;
+if(s.x<0){s.x=canvas.width;s.y=Math.random()*canvas.height;}
+ctx.fillRect(s.x,s.y,s.size,s.size);
+});
+
+// Move player
 if(moveUp) player.y-=5;
 if(moveDown) player.y+=5;
-
 if(player.y<20) player.y=20;
 if(player.y>canvas.height-20) player.y=canvas.height-20;
 
 drawShip(player.x,player.y);
 
-// bullets
-for(let i=0;i<bullets.length;i++){
-bullets[i].x+=10;
+// Bullets
+bullets.forEach((b,i)=>{
+b.x+=10;
 ctx.fillStyle="yellow";
-ctx.fillRect(bullets[i].x,bullets[i].y-2,15,4);
+ctx.fillRect(b.x,b.y-2,15,4);
+if(b.x>canvas.width) bullets.splice(i,1);
+});
 
-if(bullets[i].x>canvas.width){
-bullets.splice(i,1);
-i--;
-}
-}
-
-// enemies
-for(let i=0;i<enemies.length;i++){
-enemies[i].x-=4;
+// Enemies
+enemies.forEach((e,i)=>{
+e.x-=e.speed;
 ctx.fillStyle="red";
-ctx.fillRect(enemies[i].x,enemies[i].y,40,40);
-
-if(enemies[i].x<0){
-player.hp-=10;
+ctx.fillRect(e.x,e.y,40,40);
+if(e.x<0){
+if(!shield) player.hp-=10;
 enemies.splice(i,1);
-i--;
-if(player.hp<=0){
-alert("GAME OVER");
-location.reload();
 }
+});
+
+// Boss
+if(score>=200 && !boss) spawnBoss();
+
+if(boss){
+boss.x-=2;
+ctx.fillStyle="purple";
+ctx.fillRect(boss.x,boss.y-50,100,100);
+
+ctx.fillStyle="white";
+ctx.fillText("BOSS HP: "+boss.hp,boss.x,boss.y-60);
+
+if(boss.hp<=0){
+score+=200;
+boss=null;
 }
 }
 
-// collision
-for(let i=0;i<bullets.length;i++){
-for(let j=0;j<enemies.length;j++){
-if(
-bullets[i] && enemies[j] &&
-bullets[i].x < enemies[j].x + 40 &&
-bullets[i].x + 15 > enemies[j].x &&
-bullets[i].y < enemies[j].y + 40 &&
-bullets[i].y > enemies[j].y
-){
-bullets.splice(i,1);
-enemies.splice(j,1);
+// Collision
+bullets.forEach((b,bi)=>{
+enemies.forEach((e,ei)=>{
+if(b.x<e.x+40 && b.x+15>e.x && b.y<e.y+40 && b.y>e.y){
+explosions.push({x:e.x,y:e.y});
+enemies.splice(ei,1);
+bullets.splice(bi,1);
 score+=10;
-break;
+}
+});
+if(boss){
+if(b.x<boss.x+100 && b.x+15>boss.x &&
+b.y>boss.y-50 && b.y<boss.y+50){
+boss.hp-=10;
+bullets.splice(bi,1);
 }
 }
+});
+
+// Explosions
+explosions.forEach((ex,i)=>{
+ctx.fillStyle="orange";
+ctx.beginPath();
+ctx.arc(ex.x,ex.y,20,0,Math.PI*2);
+ctx.fill();
+explosions.splice(i,1);
+});
+
+// Power-ups random
+if(Math.random()<0.002){
+tripleShot=true;
+setTimeout(()=>tripleShot=false,5000);
+}
+if(Math.random()<0.002){
+shield=true;
+setTimeout(()=>shield=false,5000);
 }
 
 // UI
@@ -166,6 +222,15 @@ ctx.fillStyle="white";
 ctx.font="16px Arial";
 ctx.fillText("HP: "+player.hp,20,30);
 ctx.fillText("Score: "+score,20,50);
+
+if(shield){
+ctx.fillText("SHIELD ACTIVE",20,70);
+}
+
+if(player.hp<=0){
+alert("GAME OVER");
+location.reload();
+}
 
 requestAnimationFrame(update);
 }
