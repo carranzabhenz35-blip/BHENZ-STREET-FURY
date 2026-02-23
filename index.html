@@ -2,9 +2,9 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>BHENZ SPACE IMPACT WAR</title>
+<title>BHENZ BOMBER MAN</title>
 <style>
-body{margin:0;background:black;overflow:hidden;font-family:Arial;color:white;}
+body{margin:0;background:#111;overflow:hidden;font-family:Arial;color:white;}
 canvas{display:block;}
 </style>
 </head>
@@ -19,208 +19,135 @@ let ctx=canvas.getContext("2d");
 canvas.width=window.innerWidth;
 canvas.height=window.innerHeight;
 
-let player={x:80,y:canvas.height/2,hp:100};
-let bullets=[];
-let enemies=[];
-let bossBullets=[];
+let tile=40;
+let cols=Math.floor(canvas.width/tile);
+let rows=Math.floor(canvas.height/tile);
+
+let map=[];
+for(let y=0;y<rows;y++){
+map[y]=[];
+for(let x=0;x<cols;x++){
+if(x===0||y===0||x===cols-1||y===rows-1){
+map[y][x]=1; // wall
+}else if(Math.random()<0.2){
+map[y][x]=2; // breakable
+}else{
+map[y][x]=0; // empty
+}
+}
+}
+
+let player={x:1,y:1};
+let enemy={x:cols-2,y:rows-2};
+let bombs=[];
 let explosions=[];
-let stars=[];
-let score=0;
-let stage=1;
-let boss=null;
-let moveDir=0;
-let stageTarget=120;
+let gameOver=false;
 
-// stars
-for(let i=0;i<80;i++){
-stars.push({
-x:Math.random()*canvas.width,
-y:Math.random()*canvas.height,
-size:Math.random()*2
-});
-}
-
-// auto fire
-setInterval(()=>{
-bullets.push({x:player.x+30,y:player.y});
-},300);
-
-// enemy spawn
-function spawnEnemy(){
-if(!boss){
-enemies.push({
-x:canvas.width,
-y:Math.random()*(canvas.height-40),
-speed:3+stage
-});
-}
-}
-setInterval(spawnEnemy,1200);
-
-// touch control
+// touch move
 canvas.addEventListener("touchstart",e=>{
-let y=e.touches[0].clientY;
-moveDir = y < canvas.height/2 ? -1 : 1;
-});
-canvas.addEventListener("touchend",()=>moveDir=0);
+if(gameOver) return;
+let touch=e.touches[0];
+let gridX=Math.floor(touch.clientX/tile);
+let gridY=Math.floor(touch.clientY/tile);
 
-function drawShip(x,y){
-ctx.fillStyle="cyan";
-ctx.beginPath();
-ctx.moveTo(x,y);
-ctx.lineTo(x-25,y-15);
-ctx.lineTo(x-25,y+15);
-ctx.closePath();
-ctx.fill();
-
-ctx.fillStyle="orange";
-ctx.beginPath();
-ctx.moveTo(x-25,y-8);
-ctx.lineTo(x-40,y);
-ctx.lineTo(x-25,y+8);
-ctx.closePath();
-ctx.fill();
+if(Math.abs(gridX-player.x)+Math.abs(gridY-player.y)===1){
+if(map[gridY][gridX]===0){
+player.x=gridX;
+player.y=gridY;
 }
+}else{
+placeBomb();
+}
+});
 
-function spawnBoss(){
-boss={
-x:canvas.width-160,
-y:canvas.height/2,
-hp:300 + stage*80,
-shootTimer:0
-};
+function placeBomb(){
+bombs.push({x:player.x,y:player.y,timer:60});
 }
 
 function update(){
 
+ctx.clearRect(0,0,canvas.width,canvas.height);
+
+// draw map
+for(let y=0;y<rows;y++){
+for(let x=0;x<cols;x++){
+if(map[y][x]===1){
+ctx.fillStyle="gray";
+ctx.fillRect(x*tile,y*tile,tile,tile);
+}
+if(map[y][x]===2){
+ctx.fillStyle="brown";
+ctx.fillRect(x*tile,y*tile,tile,tile);
+}
+}
+}
+
+// bombs
+bombs.forEach((b,i)=>{
 ctx.fillStyle="black";
-ctx.fillRect(0,0,canvas.width,canvas.height);
+ctx.beginPath();
+ctx.arc(b.x*tile+20,b.y*tile+20,15,0,Math.PI*2);
+ctx.fill();
 
-// stars
-ctx.fillStyle="white";
-stars.forEach(s=>{
-s.x-=1;
-if(s.x<0){s.x=canvas.width;s.y=Math.random()*canvas.height;}
-ctx.fillRect(s.x,s.y,s.size,s.size);
-});
-
-// move player
-player.y+=moveDir*5;
-if(player.y<20) player.y=20;
-if(player.y>canvas.height-20) player.y=canvas.height-20;
-
-drawShip(player.x,player.y);
-
-// bullets
-bullets.forEach((b,i)=>{
-b.x+=10;
-ctx.fillStyle="yellow";
-ctx.fillRect(b.x,b.y-2,15,4);
-if(b.x>canvas.width) bullets.splice(i,1);
-});
-
-// enemies
-enemies.forEach((e,i)=>{
-e.x-=e.speed;
-ctx.fillStyle="red";
-ctx.fillRect(e.x,e.y,40,40);
-
-if(e.x<0){
-player.hp-=10;
-enemies.splice(i,1);
+b.timer--;
+if(b.timer<=0){
+explode(b.x,b.y);
+bombs.splice(i,1);
 }
 });
-
-// enemy collision
-bullets.forEach((b,bi)=>{
-enemies.forEach((e,ei)=>{
-if(b.x<e.x+40 && b.x+15>e.x && b.y>e.y && b.y<e.y+40){
-explosions.push({x:e.x,y:e.y,life:15});
-enemies.splice(ei,1);
-bullets.splice(bi,1);
-score+=10;
-}
-});
-});
-
-// spawn boss
-if(score>=stageTarget && !boss){
-spawnBoss();
-}
-
-// boss logic
-if(boss){
-ctx.fillStyle="purple";
-ctx.fillRect(boss.x,boss.y-70,140,140);
-
-ctx.fillStyle="white";
-ctx.fillText("BOSS HP: "+boss.hp,boss.x,boss.y-80);
-
-// boss shoot
-boss.shootTimer++;
-if(boss.shootTimer>60){
-bossBullets.push({x:boss.x,y:boss.y});
-boss.shootTimer=0;
-}
-
-// boss bullets
-bossBullets.forEach((bb,i)=>{
-bb.x-=6;
-ctx.fillStyle="orange";
-ctx.fillRect(bb.x,bb.y-3,12,6);
-
-if(bb.x<0) bossBullets.splice(i,1);
-
-// hit player
-if(bb.x<player.x+10 && bb.x>player.x-20 &&
-bb.y>player.y-15 && bb.y<player.y+15){
-player.hp-=15;
-bossBullets.splice(i,1);
-}
-});
-
-// hit boss
-bullets.forEach((b,bi)=>{
-if(b.x<boss.x+140 && b.x+15>boss.x &&
-b.y>boss.y-70 && b.y<boss.y+70){
-boss.hp-=10;
-bullets.splice(bi,1);
-}
-});
-
-if(boss.hp<=0){
-explosions.push({x:boss.x,y:boss.y,life:40});
-boss=null;
-stage++;
-stageTarget+=200;
-score=0;
-alert("STAGE "+stage+" START!");
-}
-}
 
 // explosions
 explosions.forEach((ex,i)=>{
 ctx.fillStyle="orange";
-ctx.beginPath();
-ctx.arc(ex.x,ex.y,ex.life,0,Math.PI*2);
-ctx.fill();
-ex.life-=2;
-if(ex.life<=0) explosions.splice(i,1);
+ctx.fillRect(ex.x*tile,ex.y*tile,tile,tile);
+ex.timer--;
+if(ex.timer<=0) explosions.splice(i,1);
 });
 
-// UI
-ctx.fillStyle="white";
-ctx.font="16px Arial";
-ctx.fillText("HP: "+player.hp,20,30);
-ctx.fillText("Stage: "+stage,20,50);
-ctx.fillText("Score: "+score+"/"+stageTarget,20,70);
+// player
+ctx.fillStyle="cyan";
+ctx.fillRect(player.x*tile,player.y*tile,tile,tile);
 
-if(player.hp<=0){
+// enemy move random
+if(Math.random()<0.02){
+let dir=[[1,0],[-1,0],[0,1],[0,-1]][Math.floor(Math.random()*4)];
+let nx=enemy.x+dir[0];
+let ny=enemy.y+dir[1];
+if(map[ny]&&map[ny][nx]===0){
+enemy.x=nx;
+enemy.y=ny;
+}
+}
+
+ctx.fillStyle="red";
+ctx.fillRect(enemy.x*tile,enemy.y*tile,tile,tile);
+
+// collision
+explosions.forEach(ex=>{
+if(ex.x===player.x && ex.y===player.y){
+gameOver=true;
 alert("GAME OVER");
 location.reload();
 }
+if(ex.x===enemy.x && ex.y===enemy.y){
+alert("YOU WIN!");
+location.reload();
+}
+});
 
 requestAnimationFrame(update);
+}
+
+function explode(x,y){
+let dirs=[[0,0],[1,0],[-1,0],[0,1],[0,-1]];
+dirs.forEach(d=>{
+let nx=x+d[0];
+let ny=y+d[1];
+if(map[ny]&&map[ny][nx]!==1){
+if(map[ny][nx]===2) map[ny][nx]=0;
+explosions.push({x:nx,y:ny,timer:30});
+}
+});
 }
 
 update();
