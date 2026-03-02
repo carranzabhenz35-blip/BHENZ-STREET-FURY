@@ -1,201 +1,71 @@
 <!DOCTYPE html>
 <html>
 <head>
-<meta charset="UTF-8">
-<title>BHENZ BOMBER MAN</title>
+<title>BHENZFLIX</title>
+
 <style>
 body{
-margin:0;
-background:#111;
-overflow:hidden;
+    margin:0;
+    height:100vh;
+    background-image:url('background.jpg');
+    background-size:cover;
+    background-position:center;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    font-family:Arial, sans-serif;
 }
-canvas{
-display:block;
-margin:auto;
-background:#000;
+
+/* Skull Container */
+.skull-box{
+    text-align:center;
+    background:rgba(0,0,0,0.8);
+    padding:40px;
+    border-radius:20px;
+    box-shadow:0 0 40px red;
+    color:white;
+}
+
+/* Skull Image */
+.skull-box img{
+    width:150px;
+    margin-bottom:20px;
+    filter: drop-shadow(0 0 15px red);
+}
+
+/* Button */
+button{
+    padding:12px 25px;
+    font-size:16px;
+    background:red;
+    color:white;
+    border:none;
+    border-radius:8px;
+    cursor:pointer;
+}
+
+button:hover{
+    background:darkred;
+    box-shadow:0 0 15px red;
 }
 </style>
+
 </head>
+
 <body>
 
-<canvas id="game"></canvas>
+<div class="skull-box">
 
-<script>
+    <!-- Upload ka ng skull.png sa repo mo -->
+    <img src="skull.png" alt="Skull Logo">
 
-const canvas=document.getElementById("game");
-const ctx=canvas.getContext("2d");
+    <h2>BHENZFLIX FILE DOWNLOAD</h2>
 
-const tile=40;
-const cols=13;
-const rows=15;
+    <a href="ILAGAY_LINK_MO_DITO" target="_blank">
+        <button>Download Now</button>
+    </a>
 
-canvas.width=cols*tile;
-canvas.height=rows*tile;
-
-let gameOver=false;
-
-// ===== MAP GENERATION =====
-let map=[];
-
-for(let y=0;y<rows;y++){
-map[y]=[];
-for(let x=0;x<cols;x++){
-
-// Border walls
-if(x===0||y===0||x===cols-1||y===rows-1){
-map[y][x]=1;
-}
-
-// Checker solid walls
-else if(x%2===0 && y%2===0){
-map[y][x]=1;
-}
-
-// Breakable blocks
-else if(Math.random()<0.4 && !(x<=2 && y<=2)){
-map[y][x]=2;
-}
-
-else{
-map[y][x]=0;
-}
-
-}
-}
-
-// ===== PLAYER & ENEMY =====
-let player={x:1,y:1};
-let enemy={x:cols-2,y:rows-2};
-
-let bombs=[];
-let explosions=[];
-
-// ===== TOUCH CONTROL =====
-canvas.addEventListener("touchstart",e=>{
-if(gameOver) return;
-
-let rect=canvas.getBoundingClientRect();
-let touch=e.touches[0];
-let tx=Math.floor((touch.clientX-rect.left)/tile);
-let ty=Math.floor((touch.clientY-rect.top)/tile);
-
-let dx=Math.abs(tx-player.x);
-let dy=Math.abs(ty-player.y);
-
-if(dx+dy===1 && map[ty][tx]===0){
-player.x=tx;
-player.y=ty;
-}else{
-placeBomb();
-}
-});
-
-function placeBomb(){
-bombs.push({x:player.x,y:player.y,timer:60});
-}
-
-// ===== GAME LOOP =====
-function update(){
-
-ctx.clearRect(0,0,canvas.width,canvas.height);
-
-// Draw map
-for(let y=0;y<rows;y++){
-for(let x=0;x<cols;x++){
-
-if(map[y][x]===1){
-ctx.fillStyle="#888";
-ctx.fillRect(x*tile,y*tile,tile,tile);
-}
-
-if(map[y][x]===2){
-ctx.fillStyle="orange";
-ctx.fillRect(x*tile,y*tile,tile,tile);
-}
-
-}
-}
-
-// Draw bombs
-bombs.forEach((b,i)=>{
-ctx.fillStyle="black";
-ctx.beginPath();
-ctx.arc(b.x*tile+20,b.y*tile+20,15,0,Math.PI*2);
-ctx.fill();
-
-b.timer--;
-if(b.timer<=0){
-explode(b.x,b.y);
-bombs.splice(i,1);
-}
-});
-
-// Draw explosions
-explosions.forEach((ex,i)=>{
-ctx.fillStyle="red";
-ctx.fillRect(ex.x*tile,ex.y*tile,tile,tile);
-ex.timer--;
-if(ex.timer<=0) explosions.splice(i,1);
-});
-
-// Player
-ctx.fillStyle="cyan";
-ctx.fillRect(player.x*tile,player.y*tile,tile,tile);
-
-// Enemy random move
-if(Math.random()<0.03){
-let dirs=[[1,0],[-1,0],[0,1],[0,-1]];
-let d=dirs[Math.floor(Math.random()*4)];
-let nx=enemy.x+d[0];
-let ny=enemy.y+d[1];
-if(map[ny][nx]===0){
-enemy.x=nx;
-enemy.y=ny;
-}
-}
-
-ctx.fillStyle="red";
-ctx.fillRect(enemy.x*tile,enemy.y*tile,tile,tile);
-
-// Collision check
-explosions.forEach(ex=>{
-if(ex.x===player.x && ex.y===player.y){
-gameOver=true;
-alert("GAME OVER");
-location.reload();
-}
-if(ex.x===enemy.x && ex.y===enemy.y){
-alert("YOU WIN!");
-location.reload();
-}
-});
-
-requestAnimationFrame(update);
-}
-
-function explode(x,y){
-
-let dirs=[[0,0],[1,0],[-1,0],[0,1],[0,-1]];
-
-dirs.forEach(d=>{
-let nx=x+d[0];
-let ny=y+d[1];
-
-if(map[ny][nx]!==1){
-
-if(map[ny][nx]===2){
-map[ny][nx]=0;
-}
-
-explosions.push({x:nx,y:ny,timer:25});
-}
-});
-
-}
-
-update();
-
-</script>
+</div>
 
 </body>
 </html>
